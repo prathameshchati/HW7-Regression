@@ -20,6 +20,7 @@ class BaseRegressor():
         # Define empty lists to store losses over training
         self.loss_hist_train = []
         self.loss_hist_val = []
+        self.weight_hist = [] # create a list to store weights during training
     
     def make_prediction(self, X):
         raise NotImplementedError
@@ -77,6 +78,9 @@ class BaseRegressor():
                 # Compute validation loss
                 val_loss = self.loss_function(y_val, self.make_prediction(X_val))
                 self.loss_hist_val.append(val_loss)
+
+                # append weights
+                self.weight_hist.append(self.W)
 
             # Define step size as the average parameter update over the past epoch
             prev_update_size = np.mean(np.array(update_sizes))
@@ -148,7 +152,7 @@ class LogisticRegressor(BaseRegressor):
         """
 
         # use the binary cross entropy formula to compute the loss where the y_pred is the predicted probability distribution and y_true determines which component of the summation is used
-        Hy=(-1/len(y_true))*(np.transpose(y_true)@np.log(y_pred) + np.transpose(1-y_true)@np.log(1-y_pred))
+        Hy=(-1/len(y_true))*(np.transpose(y_true)@np.log(y_pred)+np.transpose(1-y_true)@np.log(1-y_pred)) # transpose for correct dot product with predicted probability distribution
         return Hy
         # pass
         
@@ -166,9 +170,7 @@ class LogisticRegressor(BaseRegressor):
         """
 
         # compute y_pred and use the differentiated form of binary cross entropy to derive the weight gradient, which is then normalized by the number of observations (samples)
-        y_pred=1/(1+np.exp(-X@self.W))
-        weight_gradient=X.T@(y_pred-y_true)
-        weight_gradient=(1/len(y_true))*weight_gradient
-
+        y_pred=self.make_prediction(X)
+        weight_gradient=(1/len(y_true))*(X.T@(y_pred-y_true))
         return weight_gradient
         # pass
